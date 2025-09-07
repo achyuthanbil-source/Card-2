@@ -1,107 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>For You ❤️ — Scratch to Reveal</title>
-<style>
-  :root {
-    --w: 520px; --h: 360px;
-    --pad: 28px; --radius: 24px;
-    --brand: #dc4678;
-    --text: #282d3c;
-    --card: #ffffff;
-    --grad1: #ffe6f0; --grad2: #ebf5ff;
-  }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body {
-    margin: 0; min-height: 100vh; display: grid; place-items: center;
-    font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-    background: linear-gradient(135deg, #f7f7fb, #f0fbff);
-  }
-  .app {
-    width: min(92vw, var(--w)); height: auto;
-  }
-  .stack {
-    position: relative; width: 100%;
-    aspect-ratio: 13/9; /* close to 520x360, scales on iPhone */
-  }
-  .card {
-    position: absolute; inset: 0; border-radius: var(--radius);
-    background: linear-gradient(180deg, var(--grad1), var(--grad2));
-    display: grid; place-items: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-    overflow: hidden;
-  }
-  .inner {
-    width: 100%; height: 100%;
-    padding: var(--pad);
-    display: grid;
-    grid-template-rows: auto 1fr;
-  }
-  .title {
-    text-align: center; color: var(--brand);
-    font-weight: 800; font-size: clamp(18px, 3.5vw, 22px);
-  }
-  .heart { text-align: center; margin-top: 4px; color: var(--brand); opacity: .9; }
-  .msgwrap {
-    margin-top: 10px; background: var(--card); border-radius: var(--radius);
-    padding: 22px; color: var(--text); font-size: clamp(16px, 3.2vw, 18px);
-    line-height: 1.4; display: grid; place-items: center; text-align: center;
-  }
-  .controls {
-    margin-top: 10px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
-  }
-  button {
-    appearance: none; border: 0; border-radius: 999px; padding: 10px 16px;
-    background: var(--brand); color: white; font-weight: 700; cursor: pointer;
-    box-shadow: 0 6px 16px rgba(220,70,120,.28);
-  }
-  button.ghost {
-    background: #fff; color: var(--brand); border: 2px solid var(--brand);
-    box-shadow: none;
-  }
-  canvas.scratch {
-    position: absolute; inset: 0; border-radius: var(--radius);
-    touch-action: none; /* important for iPhone touch */
-  }
-  .hint {
-    position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
-    font-size: 14px; color: rgba(255,255,255,.95); font-weight: 700;
-    text-shadow: 0 1px 2px rgba(0,0,0,.25);
-    pointer-events: none;
-  }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Scratch Card — Responsive</title>
+  <style>
+    :root {
+      --cover-color: #c8ccd1; /* overlay paint color */
+      --cover-text: #3a3f45;  /* overlay text color */
+      --hint-bg: rgba(0,0,0,.6);
+      --hint-fg: #fff;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; background: #0b0f14; color: #e6e8ea; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+
+    .page {
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: clamp(12px, 3vw, 32px);
+    }
+
+    .card {
+      width: min(92vw, 680px);
+      /* Let the height follow the media aspect ratio via the <img> below */
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      background: #11161c;
+    }
+
+    .media {
+      display: block;
+      width: 100%;
+      height: auto;
+      vertical-align: middle;
+      user-select: none;
+      -webkit-user-drag: none;
+      touch-action: none; /* we'll control gestures */
+    }
+
+    canvas.overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      /* ensure the canvas sits on top */
+      pointer-events: auto;
+    }
+
+    .topbar {
+      position: absolute; inset: 12px auto auto 12px; z-index: 3;
+      background: var(--hint-bg);
+      color: var(--hint-fg);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      line-height: 1;
+      display: flex; gap: 8px; align-items: center;
+      backdrop-filter: blur(6px);
+    }
+
+    .controls {
+      margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+    }
+    .btn {
+      padding: 10px 14px; border-radius: 12px; border: 0; cursor: pointer; font-weight: 600;
+      background: #1f2630; color: #e6e8ea; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+    }
+    .btn:active { transform: translateY(1px); }
+
+    .footer-note { opacity: .7; font-size: 12px; text-align: center; margin-top: 8px; }
+      .prize { position: absolute; inset: 0; display: grid; place-items: center; padding: clamp(12px,3vw,28px); text-align: center; z-index: 1; }
+    .prize-inner { max-width: min(86ch, 90%); background: rgba(0,0,0,.45); border-radius: 16px; padding: clamp(12px,2.8vw,20px); backdrop-filter: blur(6px); box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .prize h2 { margin: 0 0 6px; font-size: clamp(18px, 5vw, 28px); font-weight: 800; letter-spacing: .2px; }
+    .prize p { margin: 0; font-size: clamp(15px, 4.2vw, 20px); line-height: 1.35; }
+    .controls .grow { flex: 1 1 auto; }
+  </style>
 </head>
 <body>
-  <div class="app">
-    <div class="stack">
-      <div class="card" id="card">
-        <div class="inner">
-          <div>
-            <div class="title">A little note for you</div>
-            <div class="heart">♥</div>
-          </div>
-          <div class="msgwrap">
-            <div id="message"></div>
-          </div>
+  <div class="page">
+    <div class="card" id="scratch-card">
+      <div class="topbar" id="progress-pill">Scratch: <span id="pct">0%</span></div>
+      <!-- Replace the src with your own image (CORS not required since it's under the canvas) -->
+      <img id="bg" class="media" alt="Prize" src="https://images.unsplash.com/photo-1545239351-1141bd82e8a6?q=80&w=1600&auto=format&fit=crop" />
+      <div class="prize" aria-live="polite">
+        <div class="prize-inner">
+          <h2 id="msg-title">A note for Eshu ❤️</h2>
+          <p id="msg-text">(Scratch to reveal your message...)</p>
         </div>
       </div>
-
-      <!-- Scratch layer -->
-      <canvas class="scratch" id="mask"></canvas>
-      <div class="hint" id="hint">Scratch to reveal</div>
+      <canvas id="cover" class="overlay" aria-label="Scratch overlay" role="img"></canvas>
     </div>
 
     <div class="controls">
-      <button id="newBtn" class="ghost">New Card</button>
-      <button id="revealBtn">Reveal</button>
+      <button class="btn" id="prev">Prev</button>
+      <button class="btn" id="next">Next</button>
+      <button class="btn grow" id="shuffle">Shuffle</button>
+      <button class="btn" id="reset">Reset</button>
+      <button class="btn" id="reveal">Reveal</button>
     </div>
+    <div class="footer-note">Works in portrait and landscape on mobile. Try rotating your phone.</div>
   </div>
 
-<script>
-/* ===== Messages (same spirit as your Java array) ===== */
-const MESSAGES = [
+  <script>
+    // ===== Messages (from your Java-style array) =====
+    const MESSAGES = [
 "Heyyy Eshu, breathe. I’m always right here with you.",
 "Missing me? I’m missing you more than you know.",
 "You are safe, seen, and so so soodeeply loved.",
@@ -208,151 +215,244 @@ const MESSAGES = [
 "I’m with you. Now and always."
 ];
 
-/* ===== Scratch logic (Canvas with composite ops) ===== */
-const AUTO_CLEAR_THRESHOLD = 0.60; // 60%
-const BRUSH_RADIUS = 22; // px
+    (function(){
 
-const msgEl = document.getElementById('message');
-const canvas = document.getElementById('mask');
-const hint = document.getElementById('hint');
-const newBtn = document.getElementById('newBtn');
-const revealBtn = document.getElementById('revealBtn');
+      const img = document.getElementById('bg');
+      const canvas = document.getElementById('cover');
+      const ctx = canvas.getContext('2d');
+      const pctEl = document.getElementById('pct');
+      const btnReset = document.getElementById('reset');
+      const btnReveal = document.getElementById('reveal');
+      const btnPrev = document.getElementById('prev');
+      const btnNext = document.getElementById('next');
+      const btnShuffle = document.getElementById('shuffle');
+      const msgText = document.getElementById('msg-text');
+      const msgTitle = document.getElementById('msg-title');
 
-let ctx, isDown = false, last = null;
+      let idx = 0; // current message index
+      function renderMessage() {
+        msgText.textContent = MESSAGES[idx];
+      }
+      function nextMessage() { idx = (idx + 1) % MESSAGES.length; renderMessage(); resetOverlay(); }
+      function prevMessage() { idx = (idx - 1 + MESSAGES.length) % MESSAGES.length; renderMessage(); resetOverlay(); }
+      function shuffleMessage() { idx = Math.floor(Math.random() * MESSAGES.length); renderMessage(); resetOverlay(); }
 
-function pickMessage() {
-  const idx = Math.floor(Math.random() * MESSAGES.length);
-  msgEl.textContent = MESSAGES[idx];
-}
+      let isDown = false;
+      let lastPoint = null;
+      let scratchRadius = 28;      // logical pixels; scaled by DPR
+      let revealThreshold = 55;     // % scratched to auto-reveal
 
-function resizeCanvas() {
-  // Fit to element size & device pixel ratio
-  const rect = canvas.getBoundingClientRect();
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  canvas.width = Math.floor(rect.width * dpr);
-  canvas.height = Math.floor(rect.height * dpr);
-  ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
+      // Handle devicePixelRatio for crisp drawing
+      function fitCanvasToElement() {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = Math.max(1, window.devicePixelRatio || 1);
+        // Only resize the canvas if CSS size changed significantly
+        const cssW = Math.round(rect.width);
+        const cssH = Math.round(rect.height);
+        if (canvas.width !== Math.round(cssW * dpr) || canvas.height !== Math.round(cssH * dpr)) {
+          canvas.width = Math.round(cssW * dpr);
+          canvas.height = Math.round(cssH * dpr);
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // scale coordinates to CSS pixels
+          paintCover();
+        }
+      }
 
-  // Draw opaque mask with rounded rectangle and title band
-  const w = rect.width, h = rect.height;
-  ctx.clearRect(0,0,w,h);
-  ctx.fillStyle = 'rgba(180,180,190,1)';
-  roundRect(ctx, 20, 20, w-40, h-80, 24); ctx.fill();
+      function paintCover() {
+        // Paint a solid cover and add centered text
+        const { width, height } = canvas.getBoundingClientRect();
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // label
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  ctx.font = '700 18px system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
-  const s = 'Scratch to reveal';
-  const tw = ctx.measureText(s).width;
-  ctx.fillText(s, (w - tw)/2, 46);
+        // Base paint
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--cover-color').trim() || '#c8ccd1';
+        ctx.fillRect(0, 0, width, height);
 
-  hint.style.opacity = 1;
-}
+        // Add pattern-esque noise for a more scratchy feel
+        addNoise(width, height);
 
-function roundRect(c, x, y, w, h, r) {
-  c.beginPath();
-  c.moveTo(x+r, y);
-  c.arcTo(x+w, y,   x+w, y+h, r);
-  c.arcTo(x+w, y+h, x,   y+h, r);
-  c.arcTo(x,   y+h, x,   y,   r);
-  c.arcTo(x,   y,   x+w, y,   r);
-  c.closePath();
-}
+        // Text
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--cover-text').trim() || '#3a3f45';
+        ctx.font = `700 ${Math.max(18, Math.floor(width * 0.07))}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Scratch to reveal', width / 2, height / 2);
 
-function brush(pt) {
-  ctx.save();
-  ctx.globalCompositeOperation = 'destination-out'; // erase
-  ctx.beginPath();
-  ctx.arc(pt.x, pt.y, BRUSH_RADIUS, 0, Math.PI*2);
-  ctx.fill();
-  ctx.restore();
-}
+        ctx.globalCompositeOperation = 'destination-out';
+        updateProgress();
+      }
 
-function strokeLine(p1, p2) {
-  // connect circles to avoid gaps
-  const dx = p2.x - p1.x, dy = p2.y - p1.y;
-  const steps = Math.max(Math.abs(dx), Math.abs(dy));
-  for (let i=0; i<=steps; i++) {
-    const x = p1.x + (dx * i) / Math.max(1, steps);
-    const y = p1.y + (dy * i) / Math.max(1, steps);
-    brush({x,y});
-  }
-}
+      function addNoise(w, h) {
+        const step = 12;
+        ctx.save();
+        ctx.globalAlpha = 0.08;
+        for (let y = 0; y < h; y += step) {
+          for (let x = 0; x < w; x += step) {
+            const r = Math.random() * 6; // subtle
+            ctx.fillStyle = `rgb(${200 + r*4}, ${200 + r*4}, ${200 + r*4})`;
+            ctx.fillRect(x, y, step, step);
+          }
+        }
+        ctx.restore();
+      }
 
-function getPoint(e) {
-  const rect = canvas.getBoundingClientRect();
-  if (e.touches && e.touches[0]) {
-    return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
-  }
-  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-}
+      function scratchAt(x, y) {
+        const rect = canvas.getBoundingClientRect();
+        const cx = x - rect.left; // CSS pixels due to transform
+        const cy = y - rect.top;
 
-function start(e){ isDown = true; last = getPoint(e); brush(last); hint.style.opacity = 0; }
-function move(e){
-  if (!isDown) return;
-  const p = getPoint(e);
-  strokeLine(last, p);
-  last = p;
-}
-function end(){
-  isDown = false; last = null;
-  maybeAutoReveal();
-}
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = scratchRadius * 2;
 
-function maybeAutoReveal() {
-  // Sample pixels every N px to estimate cleared ratio
-  const sample = 6;
-  const rect = canvas.getBoundingClientRect();
-  const w = Math.floor(rect.width), h = Math.floor(rect.height);
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
+        if (lastPoint) {
+          ctx.beginPath();
+          ctx.moveTo(lastPoint.x, lastPoint.y);
+          ctx.lineTo(cx, cy);
+          ctx.stroke();
+        }
+        // dot to ensure gaps are filled on taps
+        ctx.beginPath();
+        ctx.arc(cx, cy, scratchRadius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
 
-  // read real pixels (device pixels)
-  const img = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        lastPoint = { x: cx, y: cy };
+      }
 
-  let total = 0, cleared = 0;
-  for (let y = 0; y < h; y += sample) {
-    for (let x = 0; x < w; x += sample) {
-      const px = (Math.floor(y*dpr) * canvas.width + Math.floor(x*dpr)) * 4;
-      const a = img[px+3]; // alpha 0..255
-      total++;
-      if (a === 0) cleared++;
-    }
-  }
-  if (total && (cleared/total) >= AUTO_CLEAR_THRESHOLD) revealAll();
-}
+      function handleDown(ev) {
+        isDown = true;
+        lastPoint = null;
+        const p = getEventPoint(ev);
+        scratchAt(p.x, p.y);
+        updateProgressThrottled();
+      }
+      function handleMove(ev) {
+        if (!isDown) return;
+        const p = getEventPoint(ev);
+        scratchAt(p.x, p.y);
+        updateProgressThrottled();
+      }
+      function handleUp() {
+        isDown = false;
+        lastPoint = null;
+        maybeAutoReveal();
+      }
 
-function revealAll() {
-  ctx.save();
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.restore();
-  hint.style.opacity = 0;
-}
+      function getEventPoint(ev) {
+        if (ev.touches && ev.touches[0]) {
+          return { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
+        }
+        return { x: ev.clientX, y: ev.clientY };
+      }
 
-function resetMask() {
-  resizeCanvas();
-  hint.style.opacity = 1;
-}
+      // Progress calculation — sample pixels rather than full scan for speed
+      function updateProgress() {
+        try {
+          const { width, height } = canvas;
+          const sampleStep = 8; // higher -> faster but less precise
+          const data = ctx.getImageData(0, 0, width, height).data;
+          let cleared = 0, total = 0;
+          for (let y = 0; y < height; y += sampleStep) {
+            for (let x = 0; x < width; x += sampleStep) {
+              const idx = (y * width + x) * 4 + 3; // alpha channel
+              total++;
+              if (data[idx] < 16) cleared++;
+            }
+          }
+          const pct = Math.min(100, Math.max(0, Math.round((cleared / total) * 100)));
+          pctEl.textContent = pct + '%';
+          return pct;
+        } catch (e) {
+          // In case canvas becomes tainted (shouldn't, since we only draw overlay), fail gracefully
+          return 0;
+        }
+      }
 
-/* Events (mouse + touch) */
-canvas.addEventListener('mousedown', start);
-canvas.addEventListener('mousemove', move);
-window.addEventListener('mouseup', end);
+      const updateProgressThrottled = throttle(() => {
+        const pct = updateProgress();
+        if (pct >= revealThreshold) revealIfNotYet();
+      }, 120);
 
-canvas.addEventListener('touchstart', (e)=>{e.preventDefault(); start(e);}, {passive:false});
-canvas.addEventListener('touchmove',  (e)=>{e.preventDefault(); move(e);}, {passive:false});
-canvas.addEventListener('touchend',   (e)=>{e.preventDefault(); end(e);},  {passive:false});
+      function revealIfNotYet() {
+        if (!canvas.classList.contains('revealed')) {
+          canvas.classList.add('revealed');
+          // Fade-out animation using CSS opacity via JS (keeps canvas size intact)
+          canvas.style.transition = 'opacity 380ms ease';
+          canvas.style.opacity = '0';
+          setTimeout(() => { canvas.style.display = 'none'; }, 420);
+        }
+      }
 
-newBtn.addEventListener('click', () => { pickMessage(); resetMask(); });
-revealBtn.addEventListener('click', () => revealAll());
+      function maybeAutoReveal() {
+        const pct = updateProgress();
+        if (pct >= revealThreshold) revealIfNotYet();
+      }
 
-/* Init */
-window.addEventListener('resize', resetMask);
-pickMessage();
-resetMask();
-</script>
+      function resetOverlay() {
+        canvas.classList.remove('revealed');
+        canvas.style.display = 'block';
+        canvas.style.opacity = '1';
+        canvas.style.transition = '';
+        paintCover();
+        pctEl.textContent = '0%';
+      }
+
+      // Utilities
+      function throttle(fn, wait) {
+        let last = 0; let timer = null;
+        return function(...args){
+          const now = Date.now();
+          const remaining = wait - (now - last);
+          if (remaining <= 0) {
+            clearTimeout(timer); timer = null; last = now; fn.apply(this, args);
+          } else if (!timer) {
+            timer = setTimeout(() => { last = Date.now(); timer = null; fn.apply(this, args); }, remaining);
+          }
+        };
+      }
+
+      // Events
+      canvas.addEventListener('mousedown', handleDown);
+      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleUp);
+
+      canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleDown(e); }, { passive: false });
+      window.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, { passive: false });
+      window.addEventListener('touchend', handleUp, { passive: true });
+
+      btnReset.addEventListener('click', resetOverlay);
+      btnReveal.addEventListener('click', revealIfNotYet);
+      btnNext.addEventListener('click', nextMessage);
+      btnPrev.addEventListener('click', prevMessage);
+      btnShuffle.addEventListener('click', shuffleMessage);
+
+      // Keep canvas perfectly aligned over the <img> regardless of orientation/size changes
+      const ro = new ResizeObserver(() => fitCanvasToElement());
+      ro.observe(img);
+      window.addEventListener('orientationchange', () => setTimeout(fitCanvasToElement, 250));
+      window.addEventListener('resize', throttle(fitCanvasToElement, 100));
+
+      // When image loads, size canvas and paint cover
+      if (img.complete) {
+        fitCanvasToElement();
+        paintCover();
+      } else {
+        img.addEventListener('load', () => { fitCanvasToElement(); paintCover(); });
+      }
+      // Initial message
+      renderMessage();
+
+      // Optional: tweak brush size a bit based on viewport
+      function setBrushByViewport() {
+        const w = Math.min(window.innerWidth, document.getElementById('scratch-card').clientWidth);
+        scratchRadius = Math.max(18, Math.round(w / 24));
+      }
+      setBrushByViewport();
+      window.addEventListener('resize', throttle(setBrushByViewport, 120));
+
+    })();
+  </script>
 </body>
 </html>
-
