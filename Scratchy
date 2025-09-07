@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>For You ❤️ — Scratch to Reveal</title>
+<style>
+  :root {
+    --w: 520px; --h: 360px;
+    --pad: 28px; --radius: 24px;
+    --brand: #dc4678;
+    --text: #282d3c;
+    --card: #ffffff;
+    --grad1: #ffe6f0; --grad2: #ebf5ff;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(135deg, #f7f7fb, #f0fbff);
+  }
+  .app {
+    width: min(92vw, var(--w)); height: auto;
+  }
+  .stack {
+    position: relative; width: 100%;
+    aspect-ratio: 13/9; /* close to 520x360, scales on iPhone */
+  }
+  .card {
+    position: absolute; inset: 0; border-radius: var(--radius);
+    background: linear-gradient(180deg, var(--grad1), var(--grad2));
+    display: grid; place-items: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+  .inner {
+    width: 100%; height: 100%;
+    padding: var(--pad);
+    display: grid;
+    grid-template-rows: auto 1fr;
+  }
+  .title {
+    text-align: center; color: var(--brand);
+    font-weight: 800; font-size: clamp(18px, 3.5vw, 22px);
+  }
+  .heart { text-align: center; margin-top: 4px; color: var(--brand); opacity: .9; }
+  .msgwrap {
+    margin-top: 10px; background: var(--card); border-radius: var(--radius);
+    padding: 22px; color: var(--text); font-size: clamp(16px, 3.2vw, 18px);
+    line-height: 1.4; display: grid; place-items: center; text-align: center;
+  }
+  .controls {
+    margin-top: 10px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+  }
+  button {
+    appearance: none; border: 0; border-radius: 999px; padding: 10px 16px;
+    background: var(--brand); color: white; font-weight: 700; cursor: pointer;
+    box-shadow: 0 6px 16px rgba(220,70,120,.28);
+  }
+  button.ghost {
+    background: #fff; color: var(--brand); border: 2px solid var(--brand);
+    box-shadow: none;
+  }
+  canvas.scratch {
+    position: absolute; inset: 0; border-radius: var(--radius);
+    touch-action: none; /* important for iPhone touch */
+  }
+  .hint {
+    position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    font-size: 14px; color: rgba(255,255,255,.95); font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,.25);
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="stack">
+      <div class="card" id="card">
+        <div class="inner">
+          <div>
+            <div class="title">A little note for you</div>
+            <div class="heart">♥</div>
+          </div>
+          <div class="msgwrap">
+            <div id="message"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scratch layer -->
+      <canvas class="scratch" id="mask"></canvas>
+      <div class="hint" id="hint">Scratch to reveal</div>
+    </div>
+
+    <div class="controls">
+      <button id="newBtn" class="ghost">New Card</button>
+      <button id="revealBtn">Reveal</button>
+    </div>
+  </div>
+
+<script>
+/* ===== Messages (same spirit as your Java array) ===== */
+const MESSAGES = [
+"Heyyy Eshu, breathe. I’m always right here with you.",
+"Missing me? I’m missing you more than you know.",
+"You are safe, seen, and so so soodeeply loved.",
+"It’s okay to feel upset my love. I’m holding space for you.",
+"I choose you, every day, in every mood.",
+"Your feelings matter to me. Always.",
+"You don’t have to be strong alone aren't I part of your team.",
+"If you need quiet, I’ll sit in it with you.",
+"If you need to someone to talk to Eshu, you know I'm here.",
+"You are my favourite person, even on the days we fight to argue.",
+"Nothing about today changes how much I adore you.",
+"You can text or call me any time baby, there's no ‘too late’ with us.",
+"You’re allowed to feel everything. I’m not going anywhere.",
+"I’m so proud of you eshu and everything you've done.",
+"Your laugh is my favourite sound I’ll earn it back.",
+"Annoyed? Is it my fault? We can fix this. I LOVE YOU!.",
+"One hug from me is already on its way.",
+"Close your eyes. Imagine my arms around you.",
+"We’re a team. We face the day together.",
+"You’re not a burden. You’re my blessing.",
+"I believe in you. On good days and bad.",
+"You’re doing better than you think.",
+"I’m grateful for you, today and always.",
+"Every storm passes. I’ll wait them out with you.",
+"Let’s trade all our worries for some hugs when I see you next eshu.",
+"Your heart is safe with me, it really is.",
+"Thank you for being you. That’s enough.",
+"Whatever you need, just say the word.",
+"I’m on your side. Always.",
+"Let me carry a little of that weight.",
+"You deserve gentleness today.",
+"I’m sending forehead kisses and soft smiles.",
+"You’re my favourite hello and hardest goodbye.",
+"I love your mind, your heart, your soul.",
+"We’ll figure this out together.",
+"I see your effort. I’m proud of it.",
+"Your feelings are valid. No fixing needed right now.",
+"Hold my hand even from far away.",
+"You make my world softer and brighter.",
+"If the day was heavy, let me be light.",
+"Your smile is my mission today.",
+"I’ll listen without interrupting, I promise. So talk to me.",
+"You are not alone in this.",
+"It’s okay to rest. I’ve got you.",
+"I’m counting the minutes till I can hug you.",
+"You are my peace, even in chaos.",
+"Thank you for trusting me with your heart.",
+"I love the way you care about everything.",
+"You don’t have to earn love. You already have mine.",
+"Let’s plan a cozy night soon baby just us.",
+"We’ll laugh about this someday. Together.",
+"I’m right here, holding you in my thoughts.",
+"You are worthy of every good thing.",
+"I’ll never stop choosing you.",
+"Even when it’s messy, I’m yours.",
+"I can’t wait to see your sleepy smile.",
+"I admire your courage more than you know.",
+"You make ordinary moments feel magical.",
+"I’m cheering for you, always.",
+"Let’s take it one tiny step at a time.",
+"Your presence is my favourite gift.",
+"I love how your eyes light up at little things.",
+"You don’t have to explain just be with me.",
+"Whatever happens, we’ll handle it together.",
+"You’re my safe place too.",
+"I love your beautiful heart every single day of the year.",
+"You’re not too much. You’re just right for me.",
+"I’m so so lucky to love you.",
+"Your happiness matters so much to me.",
+"Even oceans apart, you’re always close to me Eshu.",
+"I will always make time for you.",
+"You’re stronger than you feel today.",
+"I’m grateful for every message from you.",
+"Let’s press pause and cuddle (mentally, for now).",
+"Your dreams matter, let’s chase them hand in hand.",
+"I love your honesty, even when it’s hard.",
+"You brighten my thoughts just by existing.",
+"I won’t minimise what you feel. I’ll honour it.",
+"You’re allowed a soft day. I’ll be soft with you.",
+"I love our silly moments. More soon.",
+"You’re precious to me. Full stop.",
+"I see how hard you try. Thank you.",
+"When you’re tired, lean on me my love.",
+"I’ll be patient, just like you are with me. Take your time.",
+"You’re my favourite human plot twist (LMAO idk what this is).",
+"You make me want to be better, for us.",
+"Let me warm your worries with kindness.",
+"You’re the home I want to return to.",
+"I’ll always root for your joy.",
+"I love you in every mood you have.",
+"We can restart this day together.",
+"You and me: we’ve got this.",
+"Your softness is strength. Keep it.",
+"I love the way you love.",
+"You’re enough, exactly as you are.",
+"Let me make you tea and listen.",
+"If you’re missing me, I’m missing you double.",
+"I love loving you. It’s my favourite job.",
+"I’m holding your hand in my heart right now.",
+"You are my person. Always.",
+"You make the hard parts worth it.",
+"I adore you; today, tomorrow, always.",
+"We’ll turn this page together.",
+"I’m with you. Now and always."
+];
+
+/* ===== Scratch logic (Canvas with composite ops) ===== */
+const AUTO_CLEAR_THRESHOLD = 0.60; // 60%
+const BRUSH_RADIUS = 22; // px
+
+const msgEl = document.getElementById('message');
+const canvas = document.getElementById('mask');
+const hint = document.getElementById('hint');
+const newBtn = document.getElementById('newBtn');
+const revealBtn = document.getElementById('revealBtn');
+
+let ctx, isDown = false, last = null;
+
+function pickMessage() {
+  const idx = Math.floor(Math.random() * MESSAGES.length);
+  msgEl.textContent = MESSAGES[idx];
+}
+
+function resizeCanvas() {
+  // Fit to element size & device pixel ratio
+  const rect = canvas.getBoundingClientRect();
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  canvas.width = Math.floor(rect.width * dpr);
+  canvas.height = Math.floor(rect.height * dpr);
+  ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  // Draw opaque mask with rounded rectangle and title band
+  const w = rect.width, h = rect.height;
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle = 'rgba(180,180,190,1)';
+  roundRect(ctx, 20, 20, w-40, h-80, 24); ctx.fill();
+
+  // label
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.font = '700 18px system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+  const s = 'Scratch to reveal';
+  const tw = ctx.measureText(s).width;
+  ctx.fillText(s, (w - tw)/2, 46);
+
+  hint.style.opacity = 1;
+}
+
+function roundRect(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x+r, y);
+  c.arcTo(x+w, y,   x+w, y+h, r);
+  c.arcTo(x+w, y+h, x,   y+h, r);
+  c.arcTo(x,   y+h, x,   y,   r);
+  c.arcTo(x,   y,   x+w, y,   r);
+  c.closePath();
+}
+
+function brush(pt) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'destination-out'; // erase
+  ctx.beginPath();
+  ctx.arc(pt.x, pt.y, BRUSH_RADIUS, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function strokeLine(p1, p2) {
+  // connect circles to avoid gaps
+  const dx = p2.x - p1.x, dy = p2.y - p1.y;
+  const steps = Math.max(Math.abs(dx), Math.abs(dy));
+  for (let i=0; i<=steps; i++) {
+    const x = p1.x + (dx * i) / Math.max(1, steps);
+    const y = p1.y + (dy * i) / Math.max(1, steps);
+    brush({x,y});
+  }
+}
+
+function getPoint(e) {
+  const rect = canvas.getBoundingClientRect();
+  if (e.touches && e.touches[0]) {
+    return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+  }
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+function start(e){ isDown = true; last = getPoint(e); brush(last); hint.style.opacity = 0; }
+function move(e){
+  if (!isDown) return;
+  const p = getPoint(e);
+  strokeLine(last, p);
+  last = p;
+}
+function end(){
+  isDown = false; last = null;
+  maybeAutoReveal();
+}
+
+function maybeAutoReveal() {
+  // Sample pixels every N px to estimate cleared ratio
+  const sample = 6;
+  const rect = canvas.getBoundingClientRect();
+  const w = Math.floor(rect.width), h = Math.floor(rect.height);
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+
+  // read real pixels (device pixels)
+  const img = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+  let total = 0, cleared = 0;
+  for (let y = 0; y < h; y += sample) {
+    for (let x = 0; x < w; x += sample) {
+      const px = (Math.floor(y*dpr) * canvas.width + Math.floor(x*dpr)) * 4;
+      const a = img[px+3]; // alpha 0..255
+      total++;
+      if (a === 0) cleared++;
+    }
+  }
+  if (total && (cleared/total) >= AUTO_CLEAR_THRESHOLD) revealAll();
+}
+
+function revealAll() {
+  ctx.save();
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.restore();
+  hint.style.opacity = 0;
+}
+
+function resetMask() {
+  resizeCanvas();
+  hint.style.opacity = 1;
+}
+
+/* Events (mouse + touch) */
+canvas.addEventListener('mousedown', start);
+canvas.addEventListener('mousemove', move);
+window.addEventListener('mouseup', end);
+
+canvas.addEventListener('touchstart', (e)=>{e.preventDefault(); start(e);}, {passive:false});
+canvas.addEventListener('touchmove',  (e)=>{e.preventDefault(); move(e);}, {passive:false});
+canvas.addEventListener('touchend',   (e)=>{e.preventDefault(); end(e);},  {passive:false});
+
+newBtn.addEventListener('click', () => { pickMessage(); resetMask(); });
+revealBtn.addEventListener('click', () => revealAll());
+
+/* Init */
+window.addEventListener('resize', resetMask);
+pickMessage();
+resetMask();
+</script>
+</body>
+</html>
+
